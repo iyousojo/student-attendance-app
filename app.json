@@ -3,7 +3,11 @@
     "name": "student-attendance-app",
     "slug": "student-attendance-app",
     "version": "1.0.0",
-    "orientation": "portrait",
+      "splash": {
+      "image": "./assets/images/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#1E40AF"
+    },
     "icon": "./assets/images/icon.png",
     "scheme": "studentattendanceapp",
     "userInterfaceStyle": "automatic",
