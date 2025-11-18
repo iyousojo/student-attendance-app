@@ -8,7 +8,7 @@
     "assetBundlePatterns": ["**/*"],
     "icon": "./assets/images/Icon.png",
     "splash": {
-     "image": "./assets/images/Icon.png",
+     "image": "./assets/images/Icon-2.png",
   "imageWidth": 200,
   "resizeMode": "cover",
   "backgroundColor": "#f5e3d5"
@@ -20,13 +20,13 @@
       "supportsTablet": true,
       "bundleIdentifier": "com.yourname.studentattendanceapp",
       "buildNumber": "1.0.0",
-      "icon": "./assets/images/Icon.png",
+      "icon": "./assets/images/Icon-2.png",
       "splash": {
-        "image": "./assets/images/Icon.png",
+        "image": "./assets/images/Icon-2.png",
         "resizeMode": "contain",
         "backgroundColor": "#f5e3d5",
         "dark": {
-          "image": "./assets/images/Icon.png",
+          "image": "./assets/images/Icon-2.png",
           "backgroundColor": "#1A1A1A"
         }
       }
@@ -50,7 +50,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/Icon.png",
+          "image": "./assets/images/Icon-2.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#f5e3d5",

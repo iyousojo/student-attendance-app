@@ -4,6 +4,6 @@ const { withNativeWind } = require('nativewind/metro');
 
 const config = getDefaultConfig(__dirname);
 
-module.exports = withNativeWind(config, { 
-  input: './global.css'   // ← THIS LINE WAS MISSING OR WRONG
+module.exports = withNativeWind(config, {
+  input: './global.css' // correct path to your Tailwind global CSS
 });
