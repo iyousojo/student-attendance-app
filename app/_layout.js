@@ -20,7 +20,7 @@ export default function RootLayout() {
       // MANUAL RESET (for development)
       // -------------------------------
       // Uncomment the line below to force the Welcome screen to show again
-      // await AsyncStorage.removeItem("firstTime");
+      await AsyncStorage.removeItem("firstTime");
       // -------------------------------
 
       try {
