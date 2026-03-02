@@ -1,45 +1,45 @@
 {
   "expo": {
-    "name": "Student Attendance App",
+    "name": "Smart Attendance",
     "slug": "student-attendance-app",
-    "version": "1.0.0",
-    "scheme": "studentattendanceapp",
-    "userInterfaceStyle": "automatic",
-    "assetBundlePatterns": ["**/*"],
+    "version": "1.0.4",
+    "scheme": "smartattendance",
+    "userInterfaceStyle": "light",
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "icon": "./assets/images/Icon.png",
     "splash": {
-     "image": "./assets/images/Icon-2.png",
-  "imageWidth": 200,
-  "resizeMode": "cover",
-  "backgroundColor": "#f5e3d5"
+      "image": "./assets/images/Icon-2.png",
+      "imageWidth": 180,
+      "resizeMode": "contain",
+      "backgroundColor": "#F5F2F0"
     },
-    "platforms": ["ios", "android", "web"],
+    "platforms": [
+      "ios",
+      "android",
+      "web"
+    ],
     "orientation": "portrait",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourname.studentattendanceapp",
-      "buildNumber": "1.0.0",
+      "bundleIdentifier": "com.yourname.smartattendance",
+      "buildNumber": "1.0.4",
       "icon": "./assets/images/Icon-2.png",
       "splash": {
         "image": "./assets/images/Icon-2.png",
         "resizeMode": "contain",
-        "backgroundColor": "#f5e3d5",
-        "dark": {
-          "image": "./assets/images/Icon-2.png",
-          "backgroundColor": "#1A1A1A"
-        }
+        "backgroundColor": "#F5F2F0"
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/Icon.png",
-        "backgroundImage": "./assets/images/Icon.png",
-        "monochromeImage": "./assets/images/Icon.png"
+        "backgroundColor": "#F5F2F0"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.yourname.studentattendanceapp"
+      "package": "com.yourname.smartattendance"
     },
     "web": {
       "favicon": "./assets/images/Icon.png",
@@ -51,12 +51,22 @@
         "expo-splash-screen",
         {
           "image": "./assets/images/Icon-2.png",
-          "imageWidth": 200,
+          "imageWidth": 180,
           "resizeMode": "contain",
-          "backgroundColor": "#f5e3d5",
-          "dark": {
-            "backgroundColor": "#1A1A1A"
-          }
+          "backgroundColor": "#F5F2F0"
+        }
+      ],
+      "expo-font",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Smart Attendance to access your camera to scan secure QR tokens."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysPermission": "Allow Smart Attendance to verify your classroom location for secure attendance."
         }
       ]
     ],

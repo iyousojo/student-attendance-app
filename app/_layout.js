@@ -1,49 +1,56 @@
-// app/_layout.js
-import React, { useEffect, useState } from "react";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
-import { View, ActivityIndicator } from "react-native";
-import "../global.css"; // Tailwind must load before router
+import { StatusBar } from "expo-status-bar";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, View } from "react-native";
+import { SafeAreaProvider } from "react-native-safe-area-context";
+import "../global.css";
 
-// Keep splash visible until we're ready
+// 🛠️ THE MASTER SWITCH
+// true  = Always show Welcome (Design Mode)
+// false = Follow memory (Production Mode)
+const DEV_MODE = true; // Set to true to always show the welcome screen for design/testing purposes  
+
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [initialRoute, setInitialRoute] = useState(null);
 
   useEffect(() => {
-    const checkFirstLaunch = async () => {
-
-      // -------------------------------
-      // MANUAL RESET (for development)
-      // -------------------------------
-      // Uncomment the line below to force the Welcome screen to show again
-      await AsyncStorage.removeItem("firstTime");
-      // -------------------------------
-
+    const checkNavigationState = async () => {
       try {
-        const firstTime = await AsyncStorage.getItem("firstTime");
+        // 1. If we are designing, bypass everything and go to index
+        if (DEV_MODE) {
+          console.log("🛠️ [LAYOUT]: DEV_MODE is ON. Forcing index.");
+          setInitialRoute("index");
+          return;
+        }
 
-        if (firstTime === null) {
-          await AsyncStorage.setItem("firstTime", "false");
-          setInitialRoute("index"); // go to Welcome screen
+        // 2. Otherwise, check memory (controlled by index.js)
+        const firstTime = await AsyncStorage.getItem("firstTime");
+        const userData = await AsyncStorage.getItem("userData");
+
+        console.log("📂 [LAYOUT]: Memory Check -> firstTime:", firstTime);
+
+        if (firstTime === null || firstTime === undefined) {
+          setInitialRoute("index");
+        } else if (userData) {
+          setInitialRoute("(tabs)");
         } else {
-          setInitialRoute("login"); // go directly to Login
+          setInitialRoute("(auth)/login");
         }
       } catch (err) {
-        console.error("Error checking AsyncStorage:", err);
-        setInitialRoute("login");
+        setInitialRoute("index");
       } finally {
+        // Short delay to ensure the UI is ready
         await SplashScreen.hideAsync();
       }
     };
 
-    checkFirstLaunch();
+    checkNavigationState();
   }, []);
 
-  // Still loading? keep splash
   if (!initialRoute) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
@@ -53,12 +60,13 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="dark" />
-      <Stack
-        initialRouteName={initialRoute}
-        screenOptions={{ headerShown: false }}
-      />
-    </>
+      <Stack initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="index" />
+        <Stack.Screen name="(auth)/login" />
+        <Stack.Screen name="(tabs)" />
+      </Stack>
+    </SafeAreaProvider>
   );
 }
