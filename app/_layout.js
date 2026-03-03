@@ -7,52 +7,57 @@ import { ActivityIndicator, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 
-// 🛠️ DEV_MODE must be false for production memory to work
+// 🛠️ THE MASTER SWITCH
 const DEV_MODE = false; 
 
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [initialRoute, setInitialRoute] = useState(null);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const checkNavigationState = async () => {
       try {
         if (DEV_MODE) {
           setInitialRoute("index");
+          setIsReady(true);
           return;
         }
 
-        // Fetch user state from persistent memory
+        // Parallel fetch for speed
         const [firstTime, userData] = await Promise.all([
           AsyncStorage.getItem("firstTime"),
           AsyncStorage.getItem("userData")
         ]);
 
-        console.log("🛠️ [SYSTEM]: Checking Onboarding Status:", firstTime);
+        console.log("🛠️ [STORAGE]: firstTime =", firstTime);
 
-        // LOGIC: If firstTime is explicitly "false", they are an "Old User"
         if (firstTime === "false") {
-          if (userData) {
-            setInitialRoute("(tabs)"); // Go straight to Dashboard
-          } else {
-            setInitialRoute("(auth)/login"); // Go straight to Login
-          }
+          // Returning user
+          setInitialRoute(userData ? "(tabs)" : "(auth)/login");
         } else {
-          // If firstTime is null or anything else, show Welcome
+          // Brand new user
           setInitialRoute("index");
         }
       } catch (err) {
         setInitialRoute("index");
       } finally {
-        await SplashScreen.hideAsync();
+        setIsReady(true);
       }
     };
 
     checkNavigationState();
   }, []);
 
-  if (!initialRoute) {
+  // Wait until route is determined AND layout is ready before hiding splash
+  useEffect(() => {
+    if (isReady && initialRoute) {
+      SplashScreen.hideAsync();
+    }
+  }, [isReady, initialRoute]);
+
+  if (!isReady || !initialRoute) {
     return (
       <View className="flex-1 items-center justify-center bg-[#F5F2F0]">
         <ActivityIndicator size="large" color="#D97706" />
@@ -63,8 +68,13 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <Stack initialRouteName={initialRoute} screenOptions={{ headerShown: false }}>
-        {/* We keep index in the stack, but the initialRoute logic above bypasses it */}
+      <Stack 
+        initialRouteName={initialRoute} 
+        screenOptions={{ 
+          headerShown: false,
+          animation: 'fade' // Smoother transition for production
+        }}
+      >
         <Stack.Screen name="index" />
         <Stack.Screen name="(auth)/login" options={{ gestureEnabled: false }} />
         <Stack.Screen name="(tabs)" options={{ gestureEnabled: false }} />
