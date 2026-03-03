@@ -17,7 +17,6 @@ export default function WelcomeScreen() {
   const [locStatus, setLocStatus] = useState(null);
   const [camStatus, setCamStatus] = useState(null);
 
-  // THEME COLORS
   const accentAmber = "#D97706";
 
   useEffect(() => {
@@ -33,8 +32,9 @@ export default function WelcomeScreen() {
 
   const handleStart = async () => {
     const finishOnboarding = async () => {
+      // Logic: Save to memory and replace route so back button is disabled
       await AsyncStorage.setItem("firstTime", "false"); 
-      router.push("/(auth)/login"); 
+      router.replace("/(auth)/login"); 
     };
 
     if (BYPASS_PERMISSIONS) {
@@ -50,7 +50,7 @@ export default function WelcomeScreen() {
     } else {
       Alert.alert(
         "Security Permissions",
-        "Camera and Location access are required to verify identity and geofencing.",
+        "Camera and Location access are required to verify identity and classroom geofencing.",
         [{ text: "Open Settings", onPress: () => Linking.openSettings() }, { text: "Cancel" }]
       );
     }
@@ -63,7 +63,6 @@ export default function WelcomeScreen() {
       <StatusBar style="dark" />
       <SafeAreaView className="flex-1 px-8 justify-between py-12">
         
-        {/* Visual Header */}
         <Animatable.View animation="fadeInDown" duration={1000} className="items-center mt-4">
           <View className="bg-white p-6 rounded-[48px] shadow-2xl shadow-stone-300 border border-stone-100">
             <Image
@@ -74,7 +73,6 @@ export default function WelcomeScreen() {
           </View>
         </Animatable.View>
 
-        {/* Content */}
         <View>
           <Text className="text-5xl font-black text-stone-900 mb-2 tracking-tighter">
             Smart{"\n"}
@@ -98,7 +96,6 @@ export default function WelcomeScreen() {
           </View>
         </View>
 
-        {/* Footer Action */}
         <View className="items-center mb-4">
           <TouchableOpacity
             onPress={handleStart}

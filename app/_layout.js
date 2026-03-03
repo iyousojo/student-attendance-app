@@ -8,9 +8,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 import "../global.css";
 
 // 🛠️ THE MASTER SWITCH
-// true  = Always show Welcome (Design Mode)
-// false = Follow memory (Production Mode)
-const DEV_MODE = false; // Set to true to always show the welcome screen for design/testing purposes  
+const DEV_MODE = false; 
 
 SplashScreen.preventAutoHideAsync();
 
@@ -20,30 +18,27 @@ export default function RootLayout() {
   useEffect(() => {
     const checkNavigationState = async () => {
       try {
-        // 1. If we are designing, bypass everything and go to index
+        // 1. Dev Bypass
         if (DEV_MODE) {
-          console.log("🛠️ [LAYOUT]: DEV_MODE is ON. Forcing index.");
           setInitialRoute("index");
           return;
         }
 
-        // 2. Otherwise, check memory (controlled by index.js)
+        // 2. Production Memory Logic
         const firstTime = await AsyncStorage.getItem("firstTime");
         const userData = await AsyncStorage.getItem("userData");
 
-        console.log("📂 [LAYOUT]: Memory Check -> firstTime:", firstTime);
-
-        if (firstTime === null || firstTime === undefined) {
-          setInitialRoute("index");
+        // We check specifically for the string "false" set by the Welcome screen
+        if (firstTime !== "false") {
+          setInitialRoute("index"); // Show Welcome Screen
         } else if (userData) {
-          setInitialRoute("(tabs)");
+          setInitialRoute("(tabs)"); // User is logged in
         } else {
-          setInitialRoute("(auth)/login");
+          setInitialRoute("(auth)/login"); // User is on-boarded but not logged in
         }
       } catch (err) {
         setInitialRoute("index");
       } finally {
-        // Short delay to ensure the UI is ready
         await SplashScreen.hideAsync();
       }
     };
@@ -53,8 +48,8 @@ export default function RootLayout() {
 
   if (!initialRoute) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#f5a623" />
+      <View className="flex-1 items-center justify-center bg-[#F5F2F0]">
+        <ActivityIndicator size="large" color="#D97706" />
       </View>
     );
   }
