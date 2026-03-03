@@ -39,7 +39,13 @@
         "backgroundColor": "#F5F2F0"
       },
       "edgeToEdgeEnabled": true,
-      "package": "com.yourname.smartattendance"
+      "package": "com.yourname.smartattendance",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "web": {
       "favicon": "./assets/images/Icon.png",
@@ -73,6 +79,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "61a35fbd-1786-428b-9e21-0c3108b39bd4"
+      }
     }
   }
 }
