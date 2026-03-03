@@ -10,8 +10,6 @@ import { Alert, Image, Linking, Text, TouchableOpacity, View } from "react-nativ
 import * as Animatable from 'react-native-animatable';
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const BYPASS_PERMISSIONS = false; 
-
 export default function WelcomeScreen() {
   const router = useRouter();
   const [locStatus, setLocStatus] = useState(null);
@@ -32,15 +30,12 @@ export default function WelcomeScreen() {
 
   const handleStart = async () => {
     const finishOnboarding = async () => {
-      // Logic: Save to memory and replace route so back button is disabled
+      // 1. Mark as OLD USER immediately
       await AsyncStorage.setItem("firstTime", "false"); 
+      
+      // 2. Redirect to Login and REFRESH the stack
       router.replace("/(auth)/login"); 
     };
-
-    if (BYPASS_PERMISSIONS) {
-      await finishOnboarding();
-      return;
-    }
 
     const { status: lRequest } = await Location.requestForegroundPermissionsAsync();
     const { status: cRequest } = await Camera.requestCameraPermissionsAsync();
@@ -50,7 +45,7 @@ export default function WelcomeScreen() {
     } else {
       Alert.alert(
         "Security Permissions",
-        "Camera and Location access are required to verify identity and classroom geofencing.",
+        "Required for identity verification.",
         [{ text: "Open Settings", onPress: () => Linking.openSettings() }, { text: "Cancel" }]
       );
     }
@@ -62,7 +57,6 @@ export default function WelcomeScreen() {
     <LinearGradient colors={["#FFFFFF", "#F5F2F0", "#E7E5E4"]} style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <SafeAreaView className="flex-1 px-8 justify-between py-12">
-        
         <Animatable.View animation="fadeInDown" duration={1000} className="items-center mt-4">
           <View className="bg-white p-6 rounded-[48px] shadow-2xl shadow-stone-300 border border-stone-100">
             <Image
@@ -79,21 +73,9 @@ export default function WelcomeScreen() {
             <Text style={{ color: accentAmber }}>Attendance</Text>
           </Text>
           <View style={{ backgroundColor: accentAmber }} className="w-16 h-2 rounded-full mb-8 shadow-sm" />
-          
           <Text className="text-xl text-stone-600 leading-8 font-medium">
             Secure, location-based verification for the modern classroom environment.
           </Text>
-          
-          <View className="flex-row items-center mt-6 space-x-4">
-             <View className="flex-row items-center bg-stone-200/50 px-3 py-1.5 rounded-full">
-                <Feather name="map-pin" size={12} color="#78716C" />
-                <Text className="text-[10px] font-black text-stone-500 uppercase ml-2 tracking-widest">GPS Locked</Text>
-             </View>
-             <View className="flex-row items-center bg-stone-200/50 px-3 py-1.5 rounded-full">
-                <Feather name="camera" size={12} color="#78716C" />
-                <Text className="text-[10px] font-black text-stone-500 uppercase ml-2 tracking-widest">QR Ready</Text>
-             </View>
-          </View>
         </View>
 
         <View className="items-center mb-4">
@@ -105,16 +87,12 @@ export default function WelcomeScreen() {
             <Text className="text-white text-sm font-black uppercase tracking-[4px] mr-3">
               {realGranted ? "Initialize" : "Authorize Portal"}
             </Text>
-            <View className="bg-white/10 p-1.5 rounded-full">
-                <Feather name="shield" size={18} color="white" />
-            </View>
+            <Feather name="shield" size={18} color="white" />
           </TouchableOpacity>
-          
           <Text className="text-stone-400 text-[10px] font-bold uppercase tracking-widest mt-6">
             v1.0.4 • Triple-Lock Secured
           </Text>
         </View>
-
       </SafeAreaView>
     </LinearGradient>
   );
