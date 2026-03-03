@@ -10,7 +10,7 @@ import "../global.css";
 // 🛠️ THE MASTER SWITCH
 // true  = Always show Welcome (Design Mode)
 // false = Follow memory (Production Mode)
-const DEV_MODE = true; // Set to true to always show the welcome screen for design/testing purposes  
+const DEV_MODE = false; // Set to true to always show the welcome screen for design/testing purposes  
 
 SplashScreen.preventAutoHideAsync();
 
