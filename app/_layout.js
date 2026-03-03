@@ -17,35 +17,29 @@ export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
-    const checkNavigationState = async () => {
-      try {
-        if (DEV_MODE) {
-          setInitialRoute("index");
-          setIsReady(true);
-          return;
-        }
+  // Inside RootLayout useEffect
+const checkNavigationState = async () => {
+  try {
+    const firstTime = await AsyncStorage.getItem("firstTime");
+    const userData = await AsyncStorage.getItem("userData");
 
-        // Parallel fetch for speed
-        const [firstTime, userData] = await Promise.all([
-          AsyncStorage.getItem("firstTime"),
-          AsyncStorage.getItem("userData")
-        ]);
+    // This log will tell you exactly what the phone thinks
+    console.log("🔍 MEMORY SCAN:", { firstTime, userData: !!userData });
 
-        console.log("🛠️ [STORAGE]: firstTime =", firstTime);
-
-        if (firstTime === "false") {
-          // Returning user
-          setInitialRoute(userData ? "(tabs)" : "(auth)/login");
-        } else {
-          // Brand new user
-          setInitialRoute("index");
-        }
-      } catch (err) {
-        setInitialRoute("index");
-      } finally {
-        setIsReady(true);
-      }
-    };
+    // Ensure we treat 'false' as a string correctly
+    if (firstTime === "false") {
+       console.log("✅ Old User detected. Bypassing Welcome.");
+       setInitialRoute(userData ? "(tabs)" : "(auth)/login");
+    } else {
+       console.log("🆕 New User detected. Showing Welcome.");
+       setInitialRoute("index");
+    }
+  } catch (err) {
+    setInitialRoute("index");
+  } finally {
+    setIsReady(true);
+  }
+};
 
     checkNavigationState();
   }, []);
