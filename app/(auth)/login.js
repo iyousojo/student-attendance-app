@@ -11,6 +11,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Text,
   TextInput,
   TouchableOpacity,
@@ -28,14 +29,30 @@ export default function LoginScreen() {
 
   const accentAmber = "#D97706";
 
-  // Initialize Hardware Identity on mount
+  // IMPROVED: Robust Hardware Identity Fetching
+  const getHardwareId = async () => {
+    try {
+      let id = null;
+      if (Platform.OS === 'android') {
+        id = Application.androidId;
+      } else {
+        id = await Application.getIosIdForVendorAsync();
+      }
+      
+      if (id) {
+        setDeviceId(id);
+        console.log("Hardware Verified:", id);
+      } else {
+        // Fallback for some dev environments/simulators
+        console.warn("Hardware ID returned null");
+      }
+    } catch (err) {
+      console.error("Hardware retrieval failure", err);
+    }
+  };
+
   useEffect(() => {
-    (async () => {
-      const id = Platform.OS === 'android' 
-        ? Application.androidId 
-        : await Application.getIosIdForVendorAsync();
-      setDeviceId(id);
-    })();
+    getHardwareId();
   }, []);
 
   const handleLogin = async () => {
@@ -44,8 +61,18 @@ export default function LoginScreen() {
       return;
     }
 
-    if (!deviceId) {
-      Alert.alert("Terminal Error", "Could not verify hardware integrity. Restart the app.");
+    // Attempt one last fetch if deviceId is missing
+    let finalId = deviceId;
+    if (!finalId) {
+      const retryId = Platform.OS === 'android' ? Application.androidId : await Application.getIosIdForVendorAsync();
+      if (retryId) finalId = retryId;
+    }
+
+    if (!finalId) {
+      Alert.alert(
+        "Terminal Error", 
+        "Hardware integrity check failed. If you are on a simulator, ensure Expo is properly configured."
+      );
       return;
     }
 
@@ -56,16 +83,13 @@ export default function LoginScreen() {
         {
           email: email.toLowerCase().trim(),
           password: password, 
-          deviceId: deviceId, 
+          deviceId: finalId, 
         }
       );
 
       if (response.data.success) {
         const { token, user } = response.data;
-        
-        // Clear previous session state
         await AsyncStorage.multiRemove(["userToken", "userData"]);
-        
         await AsyncStorage.setItem("userToken", token);
         await AsyncStorage.setItem("userData", JSON.stringify(user));
         
@@ -75,21 +99,11 @@ export default function LoginScreen() {
       const status = error.response?.status;
       const msg = error.response?.data?.message || "Connection to secure portal failed.";
 
-      // OBFUSCATED BINDING ERROR
       if (status === 403 && (msg.toLowerCase().includes("bound") || msg.toLowerCase().includes("mismatch"))) {
         Alert.alert(
           "Security Violation",
-          "This identity is locked to a different physical terminal. Authorized hardware only.",
-          [
-            { text: "Dismiss", style: "cancel" },
-            { 
-              text: "Request Access", 
-              onPress: () => Alert.alert(
-                "Manual Override", 
-                "To re-bind this terminal, append the administrative reset prefix to your access key."
-              ) 
-            }
-          ]
+          "Identity locked to different hardware. Re-binding required.",
+          [{ text: "Dismiss" }]
         );
       } else {
         Alert.alert("Access Denied", msg);
@@ -105,97 +119,115 @@ export default function LoginScreen() {
       <SafeAreaView style={{ flex: 1 }}>
         <KeyboardAvoidingView
           behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1, paddingHorizontal: 32, justifyContent: "center" }}
+          style={{ flex: 1 }}
         >
-          {/* Brand Header */}
-          <View className="mb-10 items-center">
-            <View className="bg-white p-6 rounded-[32px] mb-6 shadow-xl shadow-stone-200 border border-stone-100">
-              <Feather name="shield" size={48} color={accentAmber} />
-            </View>
-            <Text className="text-4xl font-black text-stone-900 text-center tracking-tight">
-              Portal Access
-            </Text>
-            <Text className="text-stone-500 text-center mt-2 font-medium tracking-wide">
-              Secure Attendance Protocol v1.2
-            </Text>
-          </View>
-
-          {/* Form Fields */}
-          <View className="space-y-5">
-            <View>
-              <Text className="text-stone-400 font-black text-[10px] uppercase tracking-[2px] mb-2 ml-1">
-                Authorized Email
+          <ScrollView 
+            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32 }}
+            showsVerticalScrollIndicator={false}
+          >
+            {/* Brand Header */}
+            <View className="mb-10 items-center">
+              <View className="bg-white p-6 rounded-[32px] mb-6 shadow-xl shadow-stone-200 border border-stone-100">
+                <Feather name="shield" size={48} color={accentAmber} />
+              </View>
+              <Text className="text-4xl font-black text-stone-900 text-center tracking-tight">
+                Portal Access
               </Text>
-              <View className="bg-white rounded-2xl p-4 border border-stone-200 shadow-sm shadow-stone-100">
-                <TextInput
-                  placeholder="name@university.edu"
-                  placeholderTextColor="#A8A29E"
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                  className="text-stone-900 font-bold"
-                  value={email}
-                  onChangeText={setEmail}
-                />
+              <Text className="text-stone-500 text-center mt-2 font-medium tracking-wide">
+                Secure Attendance Protocol v1.2
+              </Text>
+            </View>
+
+            {/* Form Fields */}
+            <View className="space-y-5">
+              <View>
+                <Text className="text-stone-400 font-black text-[10px] uppercase tracking-[2px] mb-2 ml-1">
+                  Authorized Email
+                </Text>
+                <View className="bg-white rounded-2xl p-4 border border-stone-200 shadow-sm shadow-stone-100">
+                  <TextInput
+                    placeholder="name@university.edu"
+                    placeholderTextColor="#A8A29E"
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    className="text-stone-900 font-bold"
+                    value={email}
+                    onChangeText={setEmail}
+                  />
+                </View>
+              </View>
+
+              <View>
+                <Text className="text-stone-400 font-black text-[10px] uppercase tracking-[2px] mb-2 ml-1">
+                  Access Key
+                </Text>
+                <View className="flex-row items-center bg-white rounded-2xl border border-stone-200 shadow-sm shadow-stone-100">
+                  <TextInput
+                    placeholder="••••••••"
+                    placeholderTextColor="#A8A29E"
+                    secureTextEntry={!showPassword}
+                    className="flex-1 p-4 text-stone-900 font-bold"
+                    value={password}
+                    onChangeText={setPassword}
+                  />
+                  <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="px-4">
+                    <Feather name={showPassword ? "eye" : "eye-off"} size={20} color="#78716C" />
+                  </TouchableOpacity>
+                </View>
               </View>
             </View>
 
-            <View>
-              <Text className="text-stone-400 font-black text-[10px] uppercase tracking-[2px] mb-2 ml-1">
-                Access Key
-              </Text>
-              <View className="flex-row items-center bg-white rounded-2xl border border-stone-200 shadow-sm shadow-stone-100">
-                <TextInput
-                  placeholder="••••••••"
-                  placeholderTextColor="#A8A29E"
-                  secureTextEntry={!showPassword}
-                  className="flex-1 p-4 text-stone-900 font-bold"
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} className="px-4">
-                  <Feather name={showPassword ? "eye" : "eye-off"} size={20} color="#78716C" />
+            {/* Login Button */}
+            <TouchableOpacity
+              onPress={handleLogin}
+              disabled={loading}
+              className={`rounded-2xl py-5 mt-10 shadow-2xl flex-row justify-center items-center ${
+                loading ? "bg-stone-300" : "bg-stone-900 shadow-stone-400"
+              }`}
+            >
+              {loading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <>
+                  <Text className="text-white text-sm font-black uppercase tracking-[3px] mr-2">Initialize</Text>
+                  <Feather name="chevron-right" size={18} color="white" />
+                </>
+              )}
+            </TouchableOpacity>
+
+            {/* Footer Notifications */}
+            <View className="mt-12 space-y-4">
+              {/* Management Notice */}
+              <View className="bg-amber-50 border border-amber-100 p-4 rounded-2xl">
+                <Text className="text-amber-800 text-[11px] font-black uppercase tracking-wider mb-1">
+                  Management Notice
+                </Text>
+                <Text className="text-amber-700 text-xs leading-relaxed">
+                  Terminal binding is active. Contact IT for <Text className="font-black">Hardware Re-sync</Text> if you have changed devices.
+                </Text>
+              </View>
+
+              {/* NEW: Admin Access Notification */}
+              <View className="bg-stone-100 border border-stone-200 p-4 rounded-2xl flex-row items-start gap-3">
+                <Feather name="info" size={14} color="#57534E" className="mt-0.5" />
+                <View className="flex-1">
+                  <Text className="text-stone-800 text-[11px] font-black uppercase tracking-wider mb-1">
+                    Administrative Access
+                  </Text>
+                  <Text className="text-stone-500 text-[11px] leading-relaxed italic">
+                    Lecturers must use authorized instructor credentials to initialize geofence deployment modules.
+                  </Text>
+                </View>
+              </View>
+
+              <View className="flex-row justify-center pt-4 pb-10">
+                <Text className="text-stone-400 font-medium">New terminal? </Text>
+                <TouchableOpacity onPress={() => router.push("/register")}>
+                  <Text style={{ color: accentAmber }} className="font-bold">Register Hardware</Text>
                 </TouchableOpacity>
               </View>
             </View>
-          </View>
-
-          {/* Login Button */}
-          <TouchableOpacity
-            onPress={handleLogin}
-            disabled={loading}
-            activeOpacity={0.9}
-            className={`rounded-2xl py-5 mt-10 shadow-2xl shadow-stone-400 flex-row justify-center items-center ${
-              loading ? "bg-stone-300" : "bg-stone-900"
-            }`}
-          >
-            {loading ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <>
-                <Text className="text-white text-sm font-black uppercase tracking-[3px] mr-2">Initialize</Text>
-                <Feather name="chevron-right" size={18} color="white" />
-              </>
-            )}
-          </TouchableOpacity>
-
-          {/* Footer Info */}
-          <View className="mt-12 items-center">
-            <View className="bg-amber-50 border border-amber-100 p-4 rounded-2xl w-full mb-6">
-               <Text className="text-amber-800 text-[11px] font-bold text-center uppercase tracking-wider mb-1">
-                 Management Notice
-               </Text>
-               <Text className="text-amber-700 text-xs text-center leading-relaxed">
-                 Terminal binding is active. Contact IT for <Text className="font-black">Hardware Re-sync</Text> if you have changed devices.
-               </Text>
-            </View>
-
-            <View className="flex-row justify-center">
-              <Text className="text-stone-400 font-medium">New terminal? </Text>
-              <TouchableOpacity onPress={() => router.push("/register")}>
-                <Text style={{ color: accentAmber }} className="font-bold">Register Hardware</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </LinearGradient>
