@@ -20,6 +20,7 @@
     "@react-navigation/stack": "^7.6.3",
     "axios": "^1.13.5",
     "expo": "~54.0.33",
+    "expo-application": "~7.0.8",
     "expo-camera": "~17.0.10",
     "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.10",

@@ -1,10 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
+import * as Application from 'expo-application';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -23,14 +24,28 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [deviceId, setDeviceId] = useState(null);
 
-  // THEME COLORS
-  const bgMain = "#F5F2F0"; // Your brownish-white
   const accentAmber = "#D97706";
+
+  // Initialize Hardware Identity on mount
+  useEffect(() => {
+    (async () => {
+      const id = Platform.OS === 'android' 
+        ? Application.androidId 
+        : await Application.getIosIdForVendorAsync();
+      setDeviceId(id);
+    })();
+  }, []);
 
   const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Validation Error", "Please enter both email and password.");
+      Alert.alert("Authentication Required", "Please provide authorized credentials.");
+      return;
+    }
+
+    if (!deviceId) {
+      Alert.alert("Terminal Error", "Could not verify hardware integrity. Restart the app.");
       return;
     }
 
@@ -40,19 +55,45 @@ export default function LoginScreen() {
         "https://studentattendanceapi-v4hq.onrender.com/api/auth/login",
         {
           email: email.toLowerCase().trim(),
-          password: password,
+          password: password, 
+          deviceId: deviceId, 
         }
       );
 
       if (response.data.success) {
         const { token, user } = response.data;
+        
+        // Clear previous session state
+        await AsyncStorage.multiRemove(["userToken", "userData"]);
+        
         await AsyncStorage.setItem("userToken", token);
         await AsyncStorage.setItem("userData", JSON.stringify(user));
+        
         router.replace("/(tabs)/home");
       }
     } catch (error) {
-      const msg = error.response?.data?.message || "Server connection failed. System waking up...";
-      Alert.alert("Login Failed", msg);
+      const status = error.response?.status;
+      const msg = error.response?.data?.message || "Connection to secure portal failed.";
+
+      // OBFUSCATED BINDING ERROR
+      if (status === 403 && (msg.toLowerCase().includes("bound") || msg.toLowerCase().includes("mismatch"))) {
+        Alert.alert(
+          "Security Violation",
+          "This identity is locked to a different physical terminal. Authorized hardware only.",
+          [
+            { text: "Dismiss", style: "cancel" },
+            { 
+              text: "Request Access", 
+              onPress: () => Alert.alert(
+                "Manual Override", 
+                "To re-bind this terminal, append the administrative reset prefix to your access key."
+              ) 
+            }
+          ]
+        );
+      } else {
+        Alert.alert("Access Denied", msg);
+      }
     } finally {
       setLoading(false);
     }
@@ -67,7 +108,7 @@ export default function LoginScreen() {
           style={{ flex: 1, paddingHorizontal: 32, justifyContent: "center" }}
         >
           {/* Brand Header */}
-          <View className="mb-12 items-center">
+          <View className="mb-10 items-center">
             <View className="bg-white p-6 rounded-[32px] mb-6 shadow-xl shadow-stone-200 border border-stone-100">
               <Feather name="shield" size={48} color={accentAmber} />
             </View>
@@ -75,7 +116,7 @@ export default function LoginScreen() {
               Portal Access
             </Text>
             <Text className="text-stone-500 text-center mt-2 font-medium tracking-wide">
-              Secure Attendance Protocol v1.0
+              Secure Attendance Protocol v1.2
             </Text>
           </View>
 
@@ -118,10 +159,6 @@ export default function LoginScreen() {
             </View>
           </View>
 
-          <TouchableOpacity className="self-end mt-4 px-1">
-            <Text className="text-stone-400 font-bold text-xs uppercase tracking-tighter">Forgot Password?</Text>
-          </TouchableOpacity>
-
           {/* Login Button */}
           <TouchableOpacity
             onPress={handleLogin}
@@ -141,12 +178,23 @@ export default function LoginScreen() {
             )}
           </TouchableOpacity>
 
-          {/* Signup Footer */}
-          <View className="flex-row justify-center mt-10">
-            <Text className="text-stone-400 font-medium">Identity not registered? </Text>
-            <TouchableOpacity onPress={() => router.push("/register")}>
-              <Text style={{ color: accentAmber }} className="font-bold">Create Account</Text>
-            </TouchableOpacity>
+          {/* Footer Info */}
+          <View className="mt-12 items-center">
+            <View className="bg-amber-50 border border-amber-100 p-4 rounded-2xl w-full mb-6">
+               <Text className="text-amber-800 text-[11px] font-bold text-center uppercase tracking-wider mb-1">
+                 Management Notice
+               </Text>
+               <Text className="text-amber-700 text-xs text-center leading-relaxed">
+                 Terminal binding is active. Contact IT for <Text className="font-black">Hardware Re-sync</Text> if you have changed devices.
+               </Text>
+            </View>
+
+            <View className="flex-row justify-center">
+              <Text className="text-stone-400 font-medium">New terminal? </Text>
+              <TouchableOpacity onPress={() => router.push("/register")}>
+                <Text style={{ color: accentAmber }} className="font-bold">Register Hardware</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </KeyboardAvoidingView>
       </SafeAreaView>
