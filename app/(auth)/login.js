@@ -29,127 +29,72 @@ export default function LoginScreen() {
 
   const accentAmber = "#D97706";
 
-  // IMPROVED: Robust Hardware Identity Fetching
-  const getHardwareId = async () => {
-    try {
-      let id = null;
-      if (Platform.OS === 'android') {
-        id = Application.androidId;
-      } else {
-        id = await Application.getIosIdForVendorAsync();
-      }
-      
-      if (id) {
-        setDeviceId(id);
-        console.log("Hardware Verified:", id);
-      } else {
-        // Fallback for some dev environments/simulators
-        console.warn("Hardware ID returned null");
-      }
-    } catch (err) {
-      console.error("Hardware retrieval failure", err);
-    }
-  };
-
   useEffect(() => {
-    getHardwareId();
+    const fetchId = async () => {
+      const id = Platform.OS === 'android' ? Application.androidId : await Application.getIosIdForVendorAsync();
+      setDeviceId(`MOB-${id.toUpperCase()}`);
+    };
+    fetchId();
   }, []);
 
   const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Authentication Required", "Please provide authorized credentials.");
-      return;
-    }
-
-    // Attempt one last fetch if deviceId is missing
-    let finalId = deviceId;
-    if (!finalId) {
-      const retryId = Platform.OS === 'android' ? Application.androidId : await Application.getIosIdForVendorAsync();
-      if (retryId) finalId = retryId;
-    }
-
-    if (!finalId) {
-      Alert.alert(
-        "Terminal Error", 
-        "Hardware integrity check failed. If you are on a simulator, ensure Expo is properly configured."
-      );
+    if (!email || !password) {
+      Alert.alert("Access Denied", "Authorized credentials required.");
       return;
     }
 
     setLoading(true);
     try {
-      const response = await axios.post(
-        "https://studentattendanceapi-v4hq.onrender.com/api/auth/login",
-        {
-          email: email.toLowerCase().trim(),
-          password: password, 
-          deviceId: finalId, 
-        }
-      );
+      const response = await axios.post("https://studentattendanceapi-v4hq.onrender.com/api/auth/login", {
+        email: email.toLowerCase().trim(),
+        password,
+        deviceId, 
+      });
 
       if (response.data.success) {
         const { token, user } = response.data;
-        await AsyncStorage.multiRemove(["userToken", "userData"]);
-        await AsyncStorage.setItem("userToken", token);
-        await AsyncStorage.setItem("userData", JSON.stringify(user));
-        
+        await AsyncStorage.multiSet([
+          ["userToken", token],
+          ["userData", JSON.stringify(user)]
+        ]);
         router.replace("/(tabs)/home");
       }
     } catch (error) {
-      const status = error.response?.status;
-      const msg = error.response?.data?.message || "Connection to secure portal failed.";
-
-      if (status === 403 && (msg.toLowerCase().includes("bound") || msg.toLowerCase().includes("mismatch"))) {
-        Alert.alert(
-          "Security Violation",
-          "Identity locked to different hardware. Re-binding required.",
-          [{ text: "Dismiss" }]
-        );
-      } else {
-        Alert.alert("Access Denied", msg);
-      }
+      const msg = error.response?.data?.message || "Portal connection failure.";
+      Alert.alert("Security Violation", msg);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <LinearGradient colors={["#FFFFFF", "#F5F2F0", "#E7E5E4"]} style={{ flex: 1 }}>
+    <LinearGradient colors={["#F5F2F0", "#E7E5E4"]} style={{ flex: 1 }}>
       <StatusBar style="dark" />
       <SafeAreaView style={{ flex: 1 }}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          style={{ flex: 1 }}
-        >
-          <ScrollView 
-            contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32 }}
-            showsVerticalScrollIndicator={false}
-          >
-            {/* Brand Header */}
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32 }}>
+            
+            {/* Faculty Terminal Branding */}
             <View className="mb-10 items-center">
-              <View className="bg-white p-6 rounded-[32px] mb-6 shadow-xl shadow-stone-200 border border-stone-100">
+              <View className="bg-white p-6 rounded-[32px] mb-6 shadow-xl border border-stone-100">
                 <Feather name="shield" size={48} color={accentAmber} />
               </View>
-              <Text className="text-4xl font-black text-stone-900 text-center tracking-tight">
-                Portal Access
+              <Text className="text-4xl font-black text-stone-900 text-center tracking-tighter uppercase italic leading-none">
+                Faculty<Text className="text-amber-600 font-black"> Terminal</Text>
               </Text>
-              <Text className="text-stone-500 text-center mt-2 font-medium tracking-wide">
-                Secure Attendance Protocol v1.2
+              <Text className="text-stone-400 text-center mt-2 font-black text-[10px] uppercase tracking-[2px]">
+                Authorized Personnel Only
               </Text>
             </View>
 
-            {/* Form Fields */}
-            <View className="space-y-5">
+            <View className="space-y-4">
               <View>
-                <Text className="text-stone-400 font-black text-[10px] uppercase tracking-[2px] mb-2 ml-1">
-                  Authorized Email
-                </Text>
-                <View className="bg-white rounded-2xl p-4 border border-stone-200 shadow-sm shadow-stone-100">
+                <Text className="text-stone-400 font-black text-[10px] uppercase tracking-[2px] mb-2 ml-1">Academic Email</Text>
+                <View className="bg-white rounded-2xl p-4 border border-stone-200">
                   <TextInput
                     placeholder="name@university.edu"
                     placeholderTextColor="#A8A29E"
                     autoCapitalize="none"
-                    keyboardType="email-address"
                     className="text-stone-900 font-bold"
                     value={email}
                     onChangeText={setEmail}
@@ -158,10 +103,8 @@ export default function LoginScreen() {
               </View>
 
               <View>
-                <Text className="text-stone-400 font-black text-[10px] uppercase tracking-[2px] mb-2 ml-1">
-                  Access Key
-                </Text>
-                <View className="flex-row items-center bg-white rounded-2xl border border-stone-200 shadow-sm shadow-stone-100">
+                <Text className="text-stone-400 font-black text-[10px] uppercase tracking-[2px] mb-2 ml-1">Security Cipher</Text>
+                <View className="flex-row items-center bg-white rounded-2xl border border-stone-200">
                   <TextInput
                     placeholder="••••••••"
                     placeholderTextColor="#A8A29E"
@@ -177,56 +120,33 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            {/* Login Button */}
-            <TouchableOpacity
-              onPress={handleLogin}
-              disabled={loading}
-              className={`rounded-2xl py-5 mt-10 shadow-2xl flex-row justify-center items-center ${
-                loading ? "bg-stone-300" : "bg-stone-900 shadow-stone-400"
-              }`}
-            >
-              {loading ? (
-                <ActivityIndicator color="white" />
-              ) : (
+            <TouchableOpacity onPress={handleLogin} disabled={loading} className={`rounded-2xl py-5 mt-10 shadow-2xl flex-row justify-center items-center ${loading ? "bg-stone-300" : "bg-stone-900"}`}>
+              {loading ? <ActivityIndicator color="white" /> : (
                 <>
-                  <Text className="text-white text-sm font-black uppercase tracking-[3px] mr-2">Initialize</Text>
+                  <Text className="text-white text-xs font-black uppercase tracking-[3px] mr-2">Initialize Node</Text>
                   <Feather name="chevron-right" size={18} color="white" />
                 </>
               )}
             </TouchableOpacity>
 
-            {/* Footer Notifications */}
-            <View className="mt-12 space-y-4">
-              {/* Management Notice */}
-              <View className="bg-amber-50 border border-amber-100 p-4 rounded-2xl">
-                <Text className="text-amber-800 text-[11px] font-black uppercase tracking-wider mb-1">
-                  Management Notice
-                </Text>
-                <Text className="text-amber-700 text-xs leading-relaxed">
-                  Terminal binding is active. Contact IT for <Text className="font-black">Hardware Re-sync</Text> if you have changed devices.
-                </Text>
+            {/* Terminal Status Footer */}
+            <View className="mt-12 p-5 bg-stone-900 rounded-[24px]">
+              <View className="flex-row items-center gap-2 mb-2">
+                <Feather name="terminal" size={12} color={accentAmber} />
+                <Text className="text-amber-500 font-black text-[9px] uppercase tracking-widest">Protocol v1.2.4 Active</Text>
               </View>
-
-              {/* NEW: Admin Access Notification */}
-              <View className="bg-stone-100 border border-stone-200 p-4 rounded-2xl flex-row items-start gap-3">
-                <Feather name="info" size={14} color="#57534E" className="mt-0.5" />
-                <View className="flex-1">
-                  <Text className="text-stone-800 text-[11px] font-black uppercase tracking-wider mb-1">
-                    Administrative Access
-                  </Text>
-                  <Text className="text-stone-500 text-[11px] leading-relaxed italic">
-                    Lecturers must use authorized instructor credentials to initialize geofence deployment modules.
-                  </Text>
-                </View>
-              </View>
-
-              <View className="flex-row justify-center pt-4 pb-10">
-                <Text className="text-stone-400 font-medium">New terminal? </Text>
-                <TouchableOpacity onPress={() => router.push("/register")}>
-                  <Text style={{ color: accentAmber }} className="font-bold">Register Hardware</Text>
-                </TouchableOpacity>
-              </View>
+              <Text className="text-stone-500 text-[9px] font-bold leading-relaxed uppercase">
+                Terminal ID: <Text className="text-stone-300">{deviceId || "Syncing..."}</Text>
+              </Text>
             </View>
+
+            <View className="flex-row justify-center mt-8 mb-10">
+              <Text className="text-stone-400 font-medium">New Hardware? </Text>
+              <TouchableOpacity onPress={() => router.push("/register")}>
+                <Text style={{ color: accentAmber }} className="font-bold">Register Identity</Text>
+              </TouchableOpacity>
+            </View>
+
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
