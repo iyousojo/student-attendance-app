@@ -1,9 +1,11 @@
 import { Feather } from "@expo/vector-icons";
 import axios from "axios";
+// 1. ADD THESE IMPORTS
+import * as Application from 'expo-application';
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { useState } from "react";
+import { useEffect, useState } from "react"; // ADD useEffect
 import {
   ActivityIndicator,
   Alert,
@@ -21,14 +23,30 @@ export default function RegisterScreen() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("student");
+  // 2. ADD DEVICE ID STATE
+  const [deviceId, setDeviceId] = useState(null); 
   const [form, setForm] = useState({
     name: "",
     email: "",
     password: "",
   });
 
-  // THEME COLORS
   const accentAmber = "#D97706";
+
+  // 3. FETCH HARDWARE ID ON COMPONENT MOUNT
+  useEffect(() => {
+    const getHardwareId = async () => {
+      try {
+        let id = Platform.OS === 'android' 
+          ? Application.androidId 
+          : await Application.getIosIdForVendorAsync();
+        setDeviceId(id);
+      } catch (err) {
+        console.error("Hardware retrieval failure", err);
+      }
+    };
+    getHardwareId();
+  }, []);
 
   const handleRegister = async () => {
     const { name, email, password } = form;
@@ -45,10 +63,11 @@ export default function RegisterScreen() {
         email: email.toLowerCase().trim(),
         password,
         role,
+        deviceId, // 4. SEND THE HARDWARE ID TO THE BACKEND
       });
 
       if (response.data.success) {
-        Alert.alert("Identity Verified", "Account created successfully. You may now initialize your session.", [
+        Alert.alert("Identity Verified", "Account created and hardware bound successfully.", [
           { text: "Proceed to Login", onPress: () => router.push("/login") }
         ]);
       }
