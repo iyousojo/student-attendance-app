@@ -30,16 +30,18 @@ export default function LoginScreen() {
   const accentAmber = "#D97706";
 
   useEffect(() => {
-    const fetchId = async () => {
-      const id = Platform.OS === 'android' ? Application.androidId : await Application.getIosIdForVendorAsync();
-      setDeviceId(`MOB-${id.toUpperCase()}`);
+    const syncID = async () => {
+      let id = Platform.OS === 'android' ? Application.androidId : await Application.getIosIdForVendorAsync();
+      // Stable fallback: No Math.random() here to keep IDs identical
+      const cleanId = id ? id.toUpperCase().trim() : `SIM-${Platform.OS.toUpperCase()}`;
+      setDeviceId(`MOB-${cleanId}`);
     };
-    fetchId();
+    syncID();
   }, []);
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Access Denied", "Authorized credentials required.");
+      Alert.alert("Access Denied", "Credentials required.");
       return;
     }
 
@@ -52,10 +54,9 @@ export default function LoginScreen() {
       });
 
       if (response.data.success) {
-        const { token, user } = response.data;
         await AsyncStorage.multiSet([
-          ["userToken", token],
-          ["userData", JSON.stringify(user)]
+          ["userToken", response.data.token],
+          ["userData", JSON.stringify(response.data.user)]
         ]);
         router.replace("/(tabs)/home");
       }
@@ -74,7 +75,6 @@ export default function LoginScreen() {
         <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', paddingHorizontal: 32 }}>
             
-            {/* Faculty Terminal Branding */}
             <View className="mb-10 items-center">
               <View className="bg-white p-6 rounded-[32px] mb-6 shadow-xl border border-stone-100">
                 <Feather name="shield" size={48} color={accentAmber} />
@@ -120,7 +120,11 @@ export default function LoginScreen() {
               </View>
             </View>
 
-            <TouchableOpacity onPress={handleLogin} disabled={loading} className={`rounded-2xl py-5 mt-10 shadow-2xl flex-row justify-center items-center ${loading ? "bg-stone-300" : "bg-stone-900"}`}>
+            <TouchableOpacity 
+              onPress={handleLogin} 
+              disabled={loading || !deviceId} 
+              className={`rounded-2xl py-5 mt-10 shadow-2xl flex-row justify-center items-center ${loading ? "bg-stone-300" : "bg-stone-900"}`}
+            >
               {loading ? <ActivityIndicator color="white" /> : (
                 <>
                   <Text className="text-white text-xs font-black uppercase tracking-[3px] mr-2">Initialize Node</Text>
@@ -129,18 +133,7 @@ export default function LoginScreen() {
               )}
             </TouchableOpacity>
 
-            {/* Terminal Status Footer */}
-            <View className="mt-12 p-5 bg-stone-900 rounded-[24px]">
-              <View className="flex-row items-center gap-2 mb-2">
-                <Feather name="terminal" size={12} color={accentAmber} />
-                <Text className="text-amber-500 font-black text-[9px] uppercase tracking-widest">Protocol v1.2.4 Active</Text>
-              </View>
-              <Text className="text-stone-500 text-[9px] font-bold leading-relaxed uppercase">
-                Terminal ID: <Text className="text-stone-300">{deviceId || "Syncing..."}</Text>
-              </Text>
-            </View>
-
-            <View className="flex-row justify-center mt-8 mb-10">
+            <View className="flex-row justify-center mt-12 mb-10">
               <Text className="text-stone-400 font-medium">New Hardware? </Text>
               <TouchableOpacity onPress={() => router.push("/register")}>
                 <Text style={{ color: accentAmber }} className="font-bold">Register Identity</Text>
