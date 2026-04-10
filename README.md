@@ -1,50 +1,127 @@
-# Welcome to your Expo app 👋
+# Smart Attendance 📱
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+[![Expo](https://img.shields.io/badge/Expo-54.0.33-blue.svg?logo=expo)](https://expo.dev)
+[![React Native](https://img.shields.io/badge/React_Native-0.81.5-green.svg)](https://reactnative.dev)
+[![NativeWind](https://img.shields.io/badge/NativeWind-v4-orange.svg)](https://www.nativewind.dev)
 
-## Get started
+**Smart Attendance** is a secure, geofenced mobile app for classroom attendance management. Professors create QR-based sessions with GPS verification (200m radius), time limits, and late detection. Students scan QR codes to mark attendance securely. Features triple-lock security: identity (JWT), time, and geofence.
 
-1. Install dependencies
+Built with Expo Router, React Native Reanimated, Expo Location/Camera, and Tailwind CSS (NativeWind).
 
+## ✨ Features
+
+### For Professors
+- **Create Secure Sessions**: Set course code, duration, late margin; auto-generates QR + backup code.
+- **Live QR Display**: Real-time attendee count, session stats.
+- **Geofencing**: 200m GPS radius enforcement.
+- **Session Management**: View details, history, attendees.
+
+### For Students
+- **QR Scanning**: Camera-based secure check-in within geofence/time window.
+- **Dashboard**: Attendance stats (attended/late), recent history.
+- **Profile & History**: Personal attendance log.
+
+### Security & UX
+- GPS precision checks (±20m ideal), encrypted API (JWT).
+- Role-based UI (tabs adapt: CREATE/SCAN).
+- Dark/light themes, haptics, sharing.
+- Permissions: Camera, Location (foreground/background).
+
+## 📱 Screenshots
+
+| Dashboard (Student) | Create Session (Professor) | Live QR Display |
+|--------------------|----------------------------|-----------------|
+| ![Home](assets/images/Icon.png) *(Replace with actual screenshot)* | ![Create](assets/images/Icon-2.png) *(Replace)* | ![QR](assets/images/qr-code-scanning-concept%20(1).png) *(Replace)* |
+
+## 🚀 Quick Start
+
+1. **Clone & Install**
    ```bash
+   git clone <your-repo> student-attendance-app
+   cd student-attendance-app
    npm install
    ```
 
-2. Start the app
-
+2. **Run the App**
    ```bash
    npx expo start
    ```
+   - **iOS Simulator**: `i` (Cmd+D on iOS)
+   - **Android Emulator**: `a`
+   - **Web**: `w`
+   - Scan QR with [Expo Go](https://expo.dev/go)
 
-In the output, you'll find options to open the app in a
+3. **Test Flow**
+   - Register/Login (roles: professor/student).
+   - Professor: Tabs → CREATE → Set course/GPS → Display QR.
+   - Student: Tabs → SCAN → Camera QR scan (within session).
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+**Backend**: Uses public API `https://studentattendanceapi-v4hq.onrender.com` (no local setup needed).
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 🏗️ Project Structure
 
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```
+app/
+├── _layout.js          # Root layout
+├── (auth)/             # Login/Register/Forgot
+├── (tabs)/             # Role-based tabs: home/action/history/profile
+├── (professor)/        # create-session.js
+└── attendance/         # display-qr.js, session-details.js
+services/
+├── api.js              # Axios wrappers
+└── qrService.js        # QR utils
+assets/images/          # Icons, splash
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🔧 Development
 
-## Learn more
+- **Styling**: NativeWind (Tailwind) + global.css.
+- **Routing**: Expo Router (file-based).
+- **State**: AsyncStorage (user/token), React hooks.
+- **API Endpoints** (example):
+  | Method | Endpoint | Desc |
+  |--------|----------|------|
+  | POST | `/api/attendance/session` | Create session |
+  | GET | `/api/attendance/session-details/:id` | Live attendees |
+  | GET | `/api/attendance/professor/sessions` | Professor dashboard |
 
-To learn more about developing your project with Expo, look at the following resources:
+- **Permissions** (app.json): Camera, Location (coarse/fine).
+- **Lint**: `npm run lint`
+- **Reset**: `npm run reset-project` (clears app/)
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## 📦 Build & Deploy
 
-## Join the community
+Using [EAS Build](https://expo.dev/eas):
+```bash
+eas login
+eas build --platform all --profile preview
+```
 
-Join our community of developers creating universal apps.
+Configs: `eas.json` (projectId: 61a35fbd-1786-428b-9e21-0c3108b39bd4).
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+- **iOS Bundle**: com.yourname.smartattendance
+- **Android Package**: com.yourname.smartattendance
+
+## 🤝 Contributing
+
+1. Fork & PR.
+2. Follow ESLint/TypeScript.
+3. Add tests for new features.
+4. Update README.
+
+Issues? [Open one](https://github.com/yourusername/student-attendance-app/issues).
+
+## 📄 License
+
+MIT License - see [LICENSE](LICENSE)
+
+## 🙌 Credits
+
+- [Expo](https://expo.dev)
+- [NativeWind](https://nativewind.dev)
+- Backend API by Agonix Tech Solutions.
+
+---
+
+**⭐ Star on GitHub if useful!** 👨‍🎓👨‍🏫
+
