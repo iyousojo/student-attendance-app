@@ -31,7 +31,7 @@ Built with Expo Router, React Native Reanimated, Expo Location/Camera, and Tailw
 
 | Dashboard (Student) | Create Session (Professor) | Live QR Display |
 |--------------------|----------------------------|-----------------|
-| ![Home](assets/images/readmeimage/photo3.jpg)  | ![Create](assets/images/readmeimage/photo2.jpg) | ![QR](assets/images/readmeimage/photo1.jpg) |
+| ![Home](readmeimage/photo3.jpg)  | ![Create](readmeimage/photo2.jpg) | ![QR](readmeimage/photo1.jpg) |
 
 ## 🚀 Quick Start
 
